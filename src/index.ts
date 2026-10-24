@@ -23,7 +23,7 @@ async function main(): Promise<void> {
         setupHeartbeat(ws);
       };
 
-      ws.onmessage = (event: MessageEvent) => {
+      ws.onmessage = (event: MessageEvent<unknown>) => {
         if (typeof event.data === "string") {
           void handleMessage(ws, event.data);
         }

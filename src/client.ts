@@ -100,6 +100,8 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
     return;
   }
 
+  console.log(data);
+
   if (!isWebSocketMessage(data)) {
     return;
   }
@@ -116,14 +118,10 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
     }
   } else if (kind === "inbox") {
     for (const job of data.games || []) {
-      if (job && typeof job.room === "string") {
-        watch(ws, job.room);
-      }
+      watch(ws, job.room);
     }
   } else if (kind === "challenge") {
-    if (typeof data.room === "string") {
-      watch(ws, data.room);
-    }
+    watch(ws, data.room);
   } else if (kind === "tournament") {
     const state = data.state;
     const tourneyId = data.tournament;

@@ -67,7 +67,7 @@ export async function callApi(
   } catch (error: unknown) {
     if (stopped) return null;
     if (
-      error instanceof Error &&
+      Error.isError(error) &&
       (error.name === "AbortError" || error instanceof TypeError)
     ) {
       return null;
