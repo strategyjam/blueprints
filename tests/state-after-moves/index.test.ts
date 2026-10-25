@@ -1,11 +1,21 @@
 import { describe, expect, it } from "bun:test";
-import { convertRawBlueprints, ruleStateFromGameState } from "#rules/validator";
 
 import { getStateAfterMove, getStateAfterMoves } from "#rules/board";
 import { parseMove } from "#rules/moves";
+import type { BoardState } from "#rules/types";
+import { convertRawBlueprints, ruleStateFromGameState } from "#rules/validator";
 
 import * as example1 from "./fixtures/example1";
 import * as example2 from "./fixtures/example2";
+import type { BoardCells } from "../../src/types";
+
+function boardToCells(board: BoardState) {
+  const obj: BoardCells = {};
+  for (const [key, cell] of board.entries()) {
+    obj[key] = [cell.owner === "blue" ? 0 : 1, cell.type];
+  }
+  return obj;
+}
 
 describe("getStateAfterMove", () => {
   it("should correctly apply a single place move (example 1)", () => {
@@ -18,6 +28,8 @@ describe("getStateAfterMove", () => {
       convertRawBlueprints(gameStateViewAfterMove.blueprints[0]),
       convertRawBlueprints(gameStateViewAfterMove.blueprints[1]),
     ]);
+
+    expect(boardToCells(after.board)).toEqual(gameStateViewAfterMove.cells);
   });
 
   it("should correctly apply a single edit move (example 2)", () => {
@@ -31,6 +43,8 @@ describe("getStateAfterMove", () => {
       convertRawBlueprints(gameStateViewAfterMove.blueprints[0]),
       convertRawBlueprints(gameStateViewAfterMove.blueprints[1]),
     ]);
+
+    expect(boardToCells(after.board)).toEqual(gameStateViewAfterMove.cells);
   });
 });
 
@@ -45,6 +59,8 @@ describe("getStateAfterMoves", () => {
       convertRawBlueprints(gameStateViewAfterMove.blueprints[0]),
       convertRawBlueprints(gameStateViewAfterMove.blueprints[1]),
     ]);
+
+    expect(boardToCells(after.board)).toEqual(gameStateViewAfterMove.cells);
   });
 
   it("should correctly apply a sequence of moves (example 2)", () => {
@@ -57,5 +73,7 @@ describe("getStateAfterMoves", () => {
       convertRawBlueprints(gameStateViewAfterMove.blueprints[0]),
       convertRawBlueprints(gameStateViewAfterMove.blueprints[1]),
     ]);
+
+    expect(boardToCells(after.board)).toEqual(gameStateViewAfterMove.cells);
   });
 });

@@ -1,4 +1,4 @@
-import { getHexKey } from "./hex";
+import { areCoordsEqual, getHexKey, getNeighbors, type HexCoord } from "./hex";
 import { parseMove, type MoveType } from "./moves";
 import type {
   BlueprintTemplate,
@@ -50,6 +50,7 @@ export function getStateAfterMove(
       throw new Error(`Blueprint ${move.blueprintId} not found`);
     }
 
+    const newlyPlaced: HexCoord[] = [];
     for (const cell of template.cells) {
       const abs = {
         q: move.target.q + cell.offset.q,
@@ -63,6 +64,24 @@ export function getStateAfterMove(
         type: cell.type,
         owner: state.currentTurn,
       });
+      newlyPlaced.push(abs);
+    }
+
+    const opponent: PlayerColor = state.currentTurn === "blue" ? "red" : "blue";
+
+    const toRemove = new Set<string>();
+    for (const placed of newlyPlaced) {
+      for (const neighbor of getNeighbors(placed)) {
+        const nKey = getHexKey(neighbor);
+        const cell = nextBoard.get(nKey);
+        if (cell && cell.owner === opponent && cell.type !== "wall") {
+          toRemove.add(nKey);
+        }
+      }
+    }
+
+    for (const key of toRemove) {
+      nextBoard.delete(key);
     }
   } else {
     const fromBp = nextPlayerBlueprints.find(
@@ -75,19 +94,19 @@ export function getStateAfterMove(
       throw new Error("Blueprint not found for edit");
     }
 
-    const removedCell = fromBp.cells.find(
-      (c) => c.offset.q === move.from.q && c.offset.r === move.from.r,
+    const removedCell = fromBp.cells.find((c) =>
+      areCoordsEqual(c.offset, move.from),
     );
     if (!removedCell) {
       throw new Error("Source cell not found");
     }
 
     const newFromCells = fromBp.cells.filter(
-      (c) => !(c.offset.q === move.from.q && c.offset.r === move.from.r),
+      (c) => !areCoordsEqual(c.offset, move.from),
     );
 
-    const alreadyExists = toBp.cells.some(
-      (c) => c.offset.q === move.to.q && c.offset.r === move.to.r,
+    const alreadyExists = toBp.cells.some((c) =>
+      areCoordsEqual(c.offset, move.to),
     );
 
     const newToCells: BlueprintCells = alreadyExists

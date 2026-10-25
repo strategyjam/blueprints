@@ -42,10 +42,10 @@ export async function play(
 ): Promise<void> {
   timers.delete(room);
   if (
-    state.view?.result ||
+    state.view.result ||
     !state.turn ||
     !state.you?.includes(state.turn) ||
-    !state.view?.moves?.length
+    !state.view.moves?.length
   ) {
     return;
   }

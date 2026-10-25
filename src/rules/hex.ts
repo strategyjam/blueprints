@@ -3,6 +3,8 @@ export interface HexCoord {
   readonly r: number;
 }
 
+export type HexCoords = ReadonlyArray<HexCoord>;
+
 export function getHexKey(coord: HexCoord): string {
   return `${coord.q},${coord.r}`;
 }
@@ -17,7 +19,7 @@ export function parseHexKey(key: string): HexCoord {
   };
 }
 
-const HEX_DIRECTIONS: ReadonlyArray<HexCoord> = [
+const HEX_DIRECTIONS: HexCoords = [
   { q: 1, r: 0 },
   { q: 1, r: -1 },
   { q: 0, r: -1 },
@@ -26,7 +28,7 @@ const HEX_DIRECTIONS: ReadonlyArray<HexCoord> = [
   { q: 0, r: 1 },
 ];
 
-export function getNeighbors(coord: HexCoord): ReadonlyArray<HexCoord> {
+export function getNeighbors(coord: HexCoord): HexCoords {
   return HEX_DIRECTIONS.map((dir) => ({
     q: coord.q + dir.q,
     r: coord.r + dir.r,

@@ -6,7 +6,7 @@ export interface GameResult {
 }
 
 export type BlueprintShape = Record<string, CellType>;
-export type BoardCells = Record<string, [number, CellType]>;
+export type BoardCells = Record<string, [player: 0 | 1, type: CellType]>;
 
 export type BlueprintShapes = [BlueprintShape, BlueprintShape, BlueprintShape];
 export type Blueprints = [red: BlueprintShapes, blue: BlueprintShapes];
