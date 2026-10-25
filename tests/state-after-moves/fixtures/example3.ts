@@ -228,8 +228,6 @@ const gameStateViewAfterMove: PartialGameStateView = {
   stars: [10, 6],
 };
 
-const move = "1:0,1>2:2,0";
-
 const moves = ["2@1,-3", "1:0,1>2:2,0"];
 
-export { initialState, gameStateViewAfterMove, move, moves };
+export { initialState, gameStateViewAfterMove, moves };

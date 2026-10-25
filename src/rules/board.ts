@@ -133,10 +133,14 @@ export function getStateAfterMove(
         ];
 
     if (move.blueprintIdFrom === move.blueprintIdTo) {
-      const newCells = [
+      let newCells: BlueprintCells = [
         ...newFromCells,
         { offset: { q: move.to.q, r: move.to.r }, type: removedCell.type },
       ];
+      // Temporary hypothesis: recenter onto the new cell when its from q !== -1 and to q === -1
+      if (move.from.q !== -1 && move.to.q === -1) {
+        newCells = translateCells(newCells, -move.to.q, -move.to.r);
+      }
 
       nextPlayerBlueprints = nextPlayerBlueprints.map((bp) =>
         bp.id === move.blueprintIdFrom ? { id: bp.id, cells: newCells } : bp,

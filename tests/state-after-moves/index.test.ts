@@ -15,6 +15,7 @@ import * as example2 from "./fixtures/example2";
 import * as example3 from "./fixtures/example3";
 import * as example4 from "./fixtures/example4";
 import * as example5 from "./fixtures/example5";
+import * as example6 from "./fixtures/example6";
 
 function boardToCells(board: BoardState) {
   const obj: BoardCells = {};
@@ -27,19 +28,17 @@ function boardToCells(board: BoardState) {
 interface FixtureExample {
   initialState: InitialState;
   gameStateViewAfterMove: PartialGameStateView;
-  move: string;
   moves: string[];
 }
 
 const runSingleMoveTest = (example: FixtureExample) => {
-  const { initialState, move, moves, gameStateViewAfterMove } = example;
-  const before = moves
-    ? getStateAfterMoves(
-        ruleStateFromGameState(initialState),
-        moves.slice(0, -1),
-      )
-    : ruleStateFromGameState(initialState);
-  const after = getStateAfterMove(before, parseMove(move));
+  const { initialState, moves, gameStateViewAfterMove } = example;
+  const before = getStateAfterMoves(
+    ruleStateFromGameState(initialState),
+    moves.slice(0, -1),
+  );
+  const move = parseMove(moves.at(-1)!);
+  const after = getStateAfterMove(before, move);
 
   expect(after.blueprints).toEqual([
     convertRawBlueprints(gameStateViewAfterMove.blueprints[0]),
@@ -80,6 +79,10 @@ describe("getStateAfterMove", () => {
   it("should correctly apply a single edit move (example 5)", () => {
     runSingleMoveTest(example5);
   });
+
+  it("should correctly apply a single edit move (example 6)", () => {
+    runSingleMoveTest(example6);
+  });
 });
 
 describe("getStateAfterMoves", () => {
@@ -101,5 +104,9 @@ describe("getStateAfterMoves", () => {
 
   it("should correctly apply a sequence of moves (example 5)", () => {
     runMoveSequenceTest(example5);
+  });
+
+  it("should correctly apply a sequence of moves (example 6)", () => {
+    runMoveSequenceTest(example6);
   });
 });
