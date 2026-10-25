@@ -16,6 +16,8 @@ import * as example3 from "./fixtures/example3";
 import * as example4 from "./fixtures/example4";
 import * as example5 from "./fixtures/example5";
 import * as example6 from "./fixtures/example6";
+import * as example7 from "./fixtures/example7";
+import * as example8 from "./fixtures/example8";
 
 function boardToCells(board: BoardState) {
   const obj: BoardCells = {};
@@ -83,6 +85,14 @@ describe("getStateAfterMove", () => {
   it("should correctly apply a single edit move (example 6)", () => {
     runSingleMoveTest(example6);
   });
+
+  it("should correctly apply a single edit move (example 7)", () => {
+    runSingleMoveTest(example7);
+  });
+
+  it("should correctly apply a single edit move (example 8)", () => {
+    runSingleMoveTest(example8);
+  });
 });
 
 describe("getStateAfterMoves", () => {
@@ -108,5 +118,13 @@ describe("getStateAfterMoves", () => {
 
   it("should correctly apply a sequence of moves (example 6)", () => {
     runMoveSequenceTest(example6);
+  });
+
+  it("should correctly apply a sequence of moves (example 7)", () => {
+    runMoveSequenceTest(example7);
+  });
+
+  it("should correctly apply a sequence of moves (example 8)", () => {
+    runMoveSequenceTest(example8);
   });
 });

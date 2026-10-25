@@ -32,14 +32,18 @@ function cloneBlueprint(bp: BlueprintTemplate): BlueprintTemplate {
   };
 }
 
-function translateCells(
-  cells: BlueprintCells,
-  dq: number,
-  dr: number,
-): BlueprintCells {
-  return cells.map((c) => ({
-    offset: { q: c.offset.q + dq, r: c.offset.r + dr },
-    type: c.type,
+function normalizeBlueprintCells(cells: BlueprintCells): BlueprintCells {
+  if (cells.length === 0) return cells;
+
+  const r = Math.min(...cells.map((c) => c.offset.r));
+  const cellsWithMinR = cells.filter((c) => c.offset.r === r);
+  const q = Math.min(...cellsWithMinR.map((c) => c.offset.q));
+
+  if (q === 0 && r === 0) return cells;
+
+  return cells.map((cell) => ({
+    type: cell.type,
+    offset: { q: cell.offset.q - q, r: cell.offset.r - r },
   }));
 }
 
@@ -114,42 +118,37 @@ export function getStateAfterMove(
       throw new Error("Source cell not found");
     }
 
-    const newFromCells = fromBp.cells.filter(
-      (c) => !areCoordsEqual(c.offset, move.from),
-    );
-
-    const alreadyExists = toBp.cells.some((c) =>
-      areCoordsEqual(c.offset, move.to),
-    );
-
-    let newToCells: BlueprintCells = alreadyExists
-      ? toBp.cells
-      : [
-          ...toBp.cells,
-          {
-            offset: { q: move.to.q, r: move.to.r },
-            type: removedCell.type,
-          },
-        ];
-
     if (move.blueprintIdFrom === move.blueprintIdTo) {
-      let newCells: BlueprintCells = [
-        ...newFromCells,
+      const filteredCells = fromBp.cells.filter(
+        (c) => !areCoordsEqual(c.offset, move.from),
+      );
+      const updatedCells: BlueprintCells = [
+        ...filteredCells,
         { offset: { q: move.to.q, r: move.to.r }, type: removedCell.type },
       ];
-      // Temporary hypothesis: recenter onto the new cell when its from q !== -1 and to q === -1
-      if (move.from.q !== -1 && move.to.q === -1) {
-        newCells = translateCells(newCells, -move.to.q, -move.to.r);
-      }
+      const newCells = normalizeBlueprintCells(updatedCells);
 
       nextPlayerBlueprints = nextPlayerBlueprints.map((bp) =>
         bp.id === move.blueprintIdFrom ? { id: bp.id, cells: newCells } : bp,
       ) as [BlueprintTemplate, BlueprintTemplate, BlueprintTemplate];
     } else {
-      // Temporary hypothesis: recenter onto the new cell when its r === -1
-      if (move.to.r === -1) {
-        newToCells = translateCells(newToCells, -move.to.q, -move.to.r);
-      }
+      const filteredFromCells = fromBp.cells.filter(
+        (c) => !areCoordsEqual(c.offset, move.from),
+      );
+      const newFromCells = normalizeBlueprintCells(filteredFromCells);
+
+      const alreadyExists = toBp.cells.some((c) =>
+        areCoordsEqual(c.offset, move.to),
+      );
+
+      const updatedToCells = alreadyExists
+        ? toBp.cells
+        : [
+            ...toBp.cells,
+            { offset: { q: move.to.q, r: move.to.r }, type: removedCell.type },
+          ];
+      const newToCells = normalizeBlueprintCells(updatedToCells);
+
       nextPlayerBlueprints = nextPlayerBlueprints.map((bp) => {
         if (bp.id === move.blueprintIdFrom) {
           return { id: bp.id, cells: newFromCells };
