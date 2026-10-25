@@ -1,8 +1,4 @@
-import {
-  getValidMoves,
-  ruleStateFromGameState,
-  serializeMove,
-} from "./rules/validator";
+import { getValidMoves, serializeMove } from "./rules/validator";
 import type { GameState } from "./types";
 
 export function selectMove(gameState: GameState): string | null {
@@ -11,9 +7,7 @@ export function selectMove(gameState: GameState): string | null {
     return null;
   }
 
-  const ruleState = ruleStateFromGameState(gameState);
-
-  const localMoves = getValidMoves(ruleState);
+  const localMoves = getValidMoves(gameState);
   const serializedLocal = new Set<string>();
   for (const localMove of localMoves) {
     serializedLocal.add(serializeMove(localMove));

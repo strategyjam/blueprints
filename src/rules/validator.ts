@@ -31,7 +31,7 @@ export type PartialGameState = {
   ply: number;
 };
 
-export function ruleStateFromGameState(state: PartialGameState): GameRuleState {
+function ruleStateFromGameState(state: PartialGameState): GameRuleState {
   const board = new Map<string, BoardCell>();
 
   const cells = state.view?.cells || state.initial?.cells || {};
@@ -264,9 +264,14 @@ function getAdjacentEmptyKeys(
   return adjacentEmptyKeys;
 }
 
-export function getValidMoves(state: GameRuleState): ReadonlyArray<MoveType> {
-  const { board, currentTurn } = state;
-  const blueprints = state.blueprints || BLUEPRINT_TEMPLATES;
+export function getValidMoves(
+  state: PartialGameState,
+): ReadonlyArray<MoveType> {
+  const {
+    board,
+    currentTurn,
+    blueprints = BLUEPRINT_TEMPLATES,
+  } = ruleStateFromGameState(state);
 
   const playerCells: HexCoord[] = [];
   for (const [key, cell] of board.entries()) {
