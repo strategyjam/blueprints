@@ -1,4 +1,7 @@
 {
+  "imports": {
+    "#rules/*": "./src/rules/*.ts"
+  },
   "scripts": {
     "dev": "bun --console-depth=5 src",
     "format": "bun fmt",

@@ -36,6 +36,5 @@ export interface GameRuleState {
   readonly currentTurn: PlayerColor;
   readonly movesRemainingInTurn: number;
   readonly ply: number;
-  readonly maxPlies: number;
   readonly blueprints: GameStateBlueprints;
 }

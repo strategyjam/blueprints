@@ -39,7 +39,6 @@ export function getStateAfterMove(
   const playerIndex = state.currentTurn === "blue" ? 0 : 1;
 
   const nextBoard = new Map(state.board);
-
   let nextPlayerBlueprints = state.blueprints[playerIndex].map(cloneBlueprint);
   const otherPlayerBlueprints = state.blueprints[1 - playerIndex]!;
 
@@ -66,7 +65,6 @@ export function getStateAfterMove(
       });
     }
   } else {
-    // edit
     const fromBp = nextPlayerBlueprints.find(
       (bp) => bp.id === move.blueprintIdFrom,
     );
@@ -77,7 +75,6 @@ export function getStateAfterMove(
       throw new Error("Blueprint not found for edit");
     }
 
-    // Remove the cell from the source blueprint (immutable)
     const removedCell = fromBp.cells.find(
       (c) => c.offset.q === move.from.q && c.offset.r === move.from.r,
     );
@@ -89,7 +86,6 @@ export function getStateAfterMove(
       (c) => !(c.offset.q === move.from.q && c.offset.r === move.from.r),
     );
 
-    // Add the cell (same type) to the target blueprint (immutable)
     const alreadyExists = toBp.cells.some(
       (c) => c.offset.q === move.to.q && c.offset.r === move.to.r,
     );
@@ -104,13 +100,21 @@ export function getStateAfterMove(
           },
         ];
 
-    // Rebuild the player's blueprint list with the updated ones
+    const anchor = { q: move.to.q, r: move.to.r };
+    const recenteredToCells: BlueprintCells = newToCells.map((c) => ({
+      offset: {
+        q: c.offset.q - anchor.q,
+        r: c.offset.r - anchor.r,
+      },
+      type: c.type,
+    }));
+
     nextPlayerBlueprints = nextPlayerBlueprints.map((bp) => {
       if (bp.id === move.blueprintIdFrom) {
         return { id: bp.id, cells: newFromCells };
       }
       if (bp.id === move.blueprintIdTo) {
-        return { id: bp.id, cells: newToCells };
+        return { id: bp.id, cells: recenteredToCells };
       }
       return bp;
     });
@@ -121,7 +125,15 @@ export function getStateAfterMove(
       ? [nextPlayerBlueprints, otherPlayerBlueprints]
       : [otherPlayerBlueprints, nextPlayerBlueprints];
 
-  // Recompute star counts after a possible place
+  const nextPly = state.ply + 1;
+  let nextMovesRemaining = state.movesRemainingInTurn - 1;
+  let nextTurn = state.currentTurn;
+
+  if (nextMovesRemaining <= 0) {
+    nextTurn = state.currentTurn === "blue" ? "red" : "blue";
+    nextMovesRemaining = 2;
+  }
+
   const starCounts = {
     blue: countPlayerStars(nextBoard, "blue"),
     red: countPlayerStars(nextBoard, "red"),
@@ -132,7 +144,9 @@ export function getStateAfterMove(
     board: nextBoard,
     blueprints: nextBlueprints,
     starCounts,
-    // currentTurn / movesRemainingInTurn / ply left unchanged
+    currentTurn: nextTurn,
+    movesRemainingInTurn: nextMovesRemaining,
+    ply: nextPly,
   };
 }
 

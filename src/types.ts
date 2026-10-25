@@ -8,16 +8,16 @@ export interface GameResult {
 export type BlueprintShape = Record<string, CellType>;
 export type BoardCells = Record<string, [number, CellType]>;
 
-export type Blueprints = [
-  [BlueprintShape, BlueprintShape, BlueprintShape],
-  [BlueprintShape, BlueprintShape, BlueprintShape],
-];
+export type BlueprintShapes = [BlueprintShape, BlueprintShape, BlueprintShape];
+export type Blueprints = [red: BlueprintShapes, blue: BlueprintShapes];
+
+export type GameStateScores = [red: number, blue: number];
 
 export interface InitialState {
   ply: number;
   cells: BoardCells;
   blueprints: Blueprints;
-  scores: number[];
+  scores: GameStateScores;
 }
 
 export interface GameClock {
@@ -33,11 +33,11 @@ export interface GameStateView {
   moves?: string[];
   result?: string | GameResult | null;
   turn?: number;
-  ply?: number;
+  ply: number;
   left?: number;
-  cells?: BoardCells;
-  blueprints?: Blueprints;
-  scores?: number[];
+  cells: BoardCells;
+  blueprints: Blueprints;
+  scores: GameStateScores;
   stars?: number[];
 }
 
@@ -54,8 +54,8 @@ export interface GameState {
   turn?: number | null;
   you?: Array<number | string>;
   startsAt?: number | null;
-  view?: GameStateView;
-  initial?: InitialState;
+  view: GameStateView;
+  initial: InitialState;
   history?: string[];
   times?: number[];
   archived?: boolean;

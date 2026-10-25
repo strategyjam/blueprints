@@ -1,4 +1,3 @@
-import { BLUEPRINT_TEMPLATES } from "./templates";
 import {
   getHexKey,
   parseHexKey,
@@ -10,18 +9,18 @@ import { countPlayerStars } from "./board";
 import type {
   GameRuleState,
   PlayerColor,
-  BlueprintTemplate,
   BoardCell,
   BoardState,
+  GameStateBlueprints,
+  BlueprintTemplates,
 } from "./types";
-import type { GameStateView, InitialState } from "../types";
-import type { CellType } from "../shared/types";
+import type { BlueprintShapes, GameStateView } from "../types";
 import type { MoveType } from "./moves";
 
-function convertRawBlueprints(
-  rawList: Array<Record<string, CellType>>,
-): BlueprintTemplate[] {
-  return rawList.map((record, index) => {
+export function convertRawBlueprints(
+  shapes: BlueprintShapes,
+): BlueprintTemplates {
+  return shapes.map((record, index) => {
     const cells = Object.entries(record).map(([key, type]) => {
       const offset = parseHexKey(key);
       return { offset, type };
@@ -30,15 +29,13 @@ function convertRawBlueprints(
   });
 }
 
-export type PartialGameState = {
-  view?: Omit<GameStateView, "moves">;
-  initial?: InitialState;
-  ply: number;
-};
+export type PartialGameStateView = Omit<GameStateView, "moves">;
 
-export function ruleStateFromGameState(state: PartialGameState): GameRuleState {
+export function ruleStateFromGameState(
+  view: PartialGameStateView,
+): GameRuleState {
   const board = new Map<string, BoardCell>();
-  const cells = state.view?.cells || state.initial?.cells || {};
+  const cells = view.cells || {};
   for (const [key, val] of Object.entries(cells)) {
     if (Array.isArray(val) && val.length === 2) {
       const [ownerIndex, type] = val;
@@ -47,38 +44,30 @@ export function ruleStateFromGameState(state: PartialGameState): GameRuleState {
     }
   }
 
-  const scoresList = state.view?.scores || state.initial?.scores || [0, 0];
-  const scores = {
-    blue: scoresList[0] ?? 0,
-    red: scoresList[1] ?? 0,
-  };
+  const scores = { blue: view.scores[0], red: view.scores[1] };
 
-  const currentTurn: PlayerColor = state.view?.turn === 0 ? "blue" : "red";
-  const ply = state.view?.ply ?? state.ply ?? 0;
+  const currentTurn: PlayerColor = view.turn === 1 ? "red" : "blue";
 
-  const rawBlueprints =
-    state.view?.blueprints || state.initial?.blueprints || [];
-
-  const blueprints: [BlueprintTemplate[], BlueprintTemplate[]] = [
-    convertRawBlueprints(rawBlueprints[0] ?? []),
-    convertRawBlueprints(rawBlueprints[1] ?? []),
+  const blueprints: GameStateBlueprints = [
+    convertRawBlueprints(view.blueprints[0]),
+    convertRawBlueprints(view.blueprints[1]),
   ];
 
-  // Fallback to templates only if a player has no blueprints at all
-  if (blueprints[0].length === 0) blueprints[0] = [...BLUEPRINT_TEMPLATES];
-  if (blueprints[1].length === 0) blueprints[1] = [...BLUEPRINT_TEMPLATES];
+  const ply = view.ply;
+  const movesRemainingInTurn = ply % 2 === 1 ? 2 : 1;
+
+  const starCounts = {
+    blue: countPlayerStars(board, "blue"),
+    red: countPlayerStars(board, "red"),
+  };
 
   return {
     board,
     scores,
-    starCounts: {
-      blue: countPlayerStars(board, "blue"),
-      red: countPlayerStars(board, "red"),
-    },
+    starCounts,
     currentTurn,
-    movesRemainingInTurn: 2,
+    movesRemainingInTurn,
     ply,
-    maxPlies: 120,
     blueprints,
   };
 }
@@ -86,7 +75,7 @@ export function ruleStateFromGameState(state: PartialGameState): GameRuleState {
 function getValidPlaceMoves(
   board: BoardState,
   currentTurn: PlayerColor,
-  blueprints: ReadonlyArray<BlueprintTemplate>,
+  blueprints: BlueprintTemplates,
   hasCells: boolean,
   adjacentEmptyKeys: ReadonlySet<string>,
 ): ReadonlyArray<MoveType> {
@@ -171,7 +160,7 @@ function areOffsetsConnected(offsets: ReadonlyArray<HexCoord>): boolean {
 }
 
 function getValidEditMoves(
-  blueprints: ReadonlyArray<BlueprintTemplate>,
+  blueprints: BlueprintTemplates,
 ): ReadonlyArray<MoveType> {
   const moves: MoveType[] = [];
   const seen = new Set<string>();
@@ -184,8 +173,6 @@ function getValidEditMoves(
         .map((c) => c.offset);
 
       for (const bpTo of blueprints) {
-        // Cross-blueprint: source must stay connected after removal.
-        // Same-blueprint: atomic, only final shape matters.
         if (bpFrom.id !== bpTo.id && !areOffsetsConnected(remainingFromCells)) {
           continue;
         }
@@ -196,7 +183,6 @@ function getValidEditMoves(
         const candidateTargets = new Set<string>();
 
         if (bpTo.cells.length === 0) {
-          // Empty blueprint can only be seeded at the origin
           candidateTargets.add("0,0");
         } else {
           for (const c of bpTo.cells) {
@@ -266,9 +252,9 @@ function getAdjacentEmptyKeys(
 }
 
 export function getValidMoves(
-  state: PartialGameState,
+  view: PartialGameStateView,
 ): ReadonlyArray<MoveType> {
-  const { board, currentTurn, blueprints } = ruleStateFromGameState(state);
+  const { board, currentTurn, blueprints } = ruleStateFromGameState(view);
   const playerIndex = currentTurn === "blue" ? 0 : 1;
   const blueprintsForPlayer = blueprints[playerIndex];
 

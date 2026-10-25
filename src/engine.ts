@@ -3,12 +3,12 @@ import { getValidMoves } from "./rules/validator";
 import type { GameState } from "./types";
 
 export function selectMove(gameState: GameState): string | null {
-  const serverMoves = gameState.view?.moves;
+  const serverMoves = gameState.view.moves;
   if (!serverMoves?.length) {
     return null;
   }
 
-  const localMoves = getValidMoves(gameState);
+  const localMoves = getValidMoves(gameState.view);
   const serializedLocal = new Set<string>();
   for (const localMove of localMoves) {
     serializedLocal.add(serializeMove(localMove));
