@@ -1,10 +1,14 @@
 import { BLUEPRINT_TEMPLATES } from "./templates";
-import { getHexKey, parseHexKey, getNeighbors, areCoordsEqual } from "./hex";
+import {
+  getHexKey,
+  parseHexKey,
+  getNeighbors,
+  areCoordsEqual,
+  type HexCoord,
+} from "./hex";
 import { countPlayerStars } from "./board";
 import type {
   GameRuleState,
-  HexCoord,
-  MoveType,
   PlayerColor,
   BlueprintTemplate,
   BoardCell,
@@ -12,10 +16,11 @@ import type {
 } from "./types";
 import type { GameStateView, InitialState } from "../types";
 import type { CellType } from "../shared/types";
+import type { MoveType } from "./moves";
 
 function convertRawBlueprints(
   rawList: Array<Record<string, CellType>>,
-): ReadonlyArray<BlueprintTemplate> {
+): BlueprintTemplate[] {
   return rawList.map((record, index) => {
     const cells = Object.entries(record).map(([key, type]) => {
       const offset = parseHexKey(key);
@@ -31,9 +36,8 @@ export type PartialGameState = {
   ply: number;
 };
 
-function ruleStateFromGameState(state: PartialGameState): GameRuleState {
+export function ruleStateFromGameState(state: PartialGameState): GameRuleState {
   const board = new Map<string, BoardCell>();
-
   const cells = state.view?.cells || state.initial?.cells || {};
   for (const [key, val] of Object.entries(cells)) {
     if (Array.isArray(val) && val.length === 2) {
@@ -52,13 +56,17 @@ function ruleStateFromGameState(state: PartialGameState): GameRuleState {
   const currentTurn: PlayerColor = state.view?.turn === 0 ? "blue" : "red";
   const ply = state.view?.ply ?? state.ply ?? 0;
 
-  const playerIndex = state.view?.turn ?? 0;
   const rawBlueprints =
     state.view?.blueprints || state.initial?.blueprints || [];
-  const playerRawBlueprints = rawBlueprints[playerIndex] || rawBlueprints[0];
-  const blueprints = playerRawBlueprints
-    ? convertRawBlueprints(playerRawBlueprints)
-    : BLUEPRINT_TEMPLATES;
+
+  const blueprints: [BlueprintTemplate[], BlueprintTemplate[]] = [
+    convertRawBlueprints(rawBlueprints[0] ?? []),
+    convertRawBlueprints(rawBlueprints[1] ?? []),
+  ];
+
+  // Fallback to templates only if a player has no blueprints at all
+  if (blueprints[0].length === 0) blueprints[0] = [...BLUEPRINT_TEMPLATES];
+  if (blueprints[1].length === 0) blueprints[1] = [...BLUEPRINT_TEMPLATES];
 
   return {
     board,
@@ -75,13 +83,6 @@ function ruleStateFromGameState(state: PartialGameState): GameRuleState {
   };
 }
 
-export function serializeMove(move: MoveType): string {
-  if (move.kind === "place") {
-    return `${move.blueprintId}@${move.target.q},${move.target.r}`;
-  }
-  return `${move.blueprintIdFrom}:${move.from.q},${move.from.r}>${move.blueprintIdTo}:${move.to.q},${move.to.r}`;
-}
-
 function getValidPlaceMoves(
   board: BoardState,
   currentTurn: PlayerColor,
@@ -90,7 +91,6 @@ function getValidPlaceMoves(
   adjacentEmptyKeys: ReadonlySet<string>,
 ): ReadonlyArray<MoveType> {
   const moves: MoveType[] = [];
-
   for (const [index, template] of blueprints.entries()) {
     const blueprintId = index + 1;
     const candidateCenters = new Set<string>();
@@ -115,7 +115,6 @@ function getValidPlaceMoves(
 
     for (const centerKey of candidateCenters) {
       const centerCoord = parseHexKey(centerKey);
-
       let canPlace = true;
       let touchesPlayer = !hasCells;
 
@@ -126,7 +125,6 @@ function getValidPlaceMoves(
         };
         const targetKey = getHexKey(targetCoord);
         const existing = board.get(targetKey);
-
         if (existing) {
           canPlace = false;
           break;
@@ -149,7 +147,6 @@ function getValidPlaceMoves(
       }
     }
   }
-
   return moves;
 }
 
@@ -178,6 +175,7 @@ function getValidEditMoves(
 ): ReadonlyArray<MoveType> {
   const moves: MoveType[] = [];
   const seen = new Set<string>();
+
   for (const bpFrom of blueprints) {
     for (const cell of bpFrom.cells) {
       const fromCoord = cell.offset;
@@ -186,6 +184,8 @@ function getValidEditMoves(
         .map((c) => c.offset);
 
       for (const bpTo of blueprints) {
+        // Cross-blueprint: source must stay connected after removal.
+        // Same-blueprint: atomic, only final shape matters.
         if (bpFrom.id !== bpTo.id && !areOffsetsConnected(remainingFromCells)) {
           continue;
         }
@@ -196,6 +196,7 @@ function getValidEditMoves(
         const candidateTargets = new Set<string>();
 
         if (bpTo.cells.length === 0) {
+          // Empty blueprint can only be seeded at the origin
           candidateTargets.add("0,0");
         } else {
           for (const c of bpTo.cells) {
@@ -218,6 +219,7 @@ function getValidEditMoves(
           if (bpFrom.id === bpTo.id && areCoordsEqual(toCoord, fromCoord)) {
             continue;
           }
+
           let newTargetOffsets: HexCoord[];
           if (bpFrom.id === bpTo.id) {
             newTargetOffsets = remainingFromCells.concat([toCoord]);
@@ -226,6 +228,7 @@ function getValidEditMoves(
               .map((c) => c.offset)
               .concat([toCoord]);
           }
+
           if (areOffsetsConnected(newTargetOffsets)) {
             const moveKey = `${bpFrom.id}:${fromCoord.q},${fromCoord.r}>${bpTo.id}:${toCoord.q},${toCoord.r}`;
             if (!seen.has(moveKey)) {
@@ -251,7 +254,6 @@ function getAdjacentEmptyKeys(
   board: BoardState,
 ): Set<string> {
   const adjacentEmptyKeys = new Set<string>();
-
   for (const pCell of playerCells) {
     for (const neighbor of getNeighbors(pCell)) {
       const nKey = getHexKey(neighbor);
@@ -260,18 +262,15 @@ function getAdjacentEmptyKeys(
       }
     }
   }
-
   return adjacentEmptyKeys;
 }
 
 export function getValidMoves(
   state: PartialGameState,
 ): ReadonlyArray<MoveType> {
-  const {
-    board,
-    currentTurn,
-    blueprints = BLUEPRINT_TEMPLATES,
-  } = ruleStateFromGameState(state);
+  const { board, currentTurn, blueprints } = ruleStateFromGameState(state);
+  const playerIndex = currentTurn === "blue" ? 0 : 1;
+  const blueprintsForPlayer = blueprints[playerIndex];
 
   const playerCells: HexCoord[] = [];
   for (const [key, cell] of board.entries()) {
@@ -279,19 +278,18 @@ export function getValidMoves(
       playerCells.push(parseHexKey(key));
     }
   }
-  const hasCells = playerCells.length > 0;
 
+  const hasCells = playerCells.length > 0;
   const adjacentEmptyKeys = getAdjacentEmptyKeys(playerCells, board);
 
   const placeMoves = getValidPlaceMoves(
     board,
     currentTurn,
-    blueprints,
+    blueprintsForPlayer,
     hasCells,
     adjacentEmptyKeys,
   );
-
-  const editMoves = getValidEditMoves(blueprints);
+  const editMoves = getValidEditMoves(blueprintsForPlayer);
 
   return [...placeMoves, ...editMoves];
 }

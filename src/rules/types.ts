@@ -1,11 +1,7 @@
 import type { CellType } from "../shared/types";
+import type { HexCoord } from "./hex";
 
 export type PlayerColor = "blue" | "red";
-
-export interface HexCoord {
-  readonly q: number;
-  readonly r: number;
-}
 
 export interface BoardCell {
   readonly type: CellType;
@@ -14,37 +10,32 @@ export interface BoardCell {
 
 export type BoardState = ReadonlyMap<string, BoardCell>;
 
-export interface BlueprintCellTemplate {
+export interface BlueprintCell {
   readonly offset: HexCoord;
   readonly type: CellType;
 }
 
+export type BlueprintCells = ReadonlyArray<BlueprintCell>;
+
 export interface BlueprintTemplate {
   readonly id: number;
-  readonly cells: ReadonlyArray<BlueprintCellTemplate>;
+  readonly cells: BlueprintCells;
 }
 
-export type MoveType =
-  | {
-      readonly kind: "place";
-      readonly blueprintId: number;
-      readonly target: HexCoord;
-    }
-  | {
-      readonly kind: "edit";
-      readonly blueprintIdFrom: number;
-      readonly from: HexCoord;
-      readonly blueprintIdTo: number;
-      readonly to: HexCoord;
-    };
+export type BlueprintTemplates = ReadonlyArray<BlueprintTemplate>;
+
+export type GameStateBlueprints = readonly [
+  blue: BlueprintTemplates,
+  red: BlueprintTemplates,
+];
 
 export interface GameRuleState {
   readonly board: BoardState;
-  readonly scores: Readonly<Record<PlayerColor, number>>;
-  readonly starCounts: Readonly<Record<PlayerColor, number>>;
+  readonly scores: { readonly blue: number; readonly red: number };
+  readonly starCounts: { readonly blue: number; readonly red: number };
   readonly currentTurn: PlayerColor;
   readonly movesRemainingInTurn: number;
   readonly ply: number;
   readonly maxPlies: number;
-  readonly blueprints: ReadonlyArray<BlueprintTemplate>;
+  readonly blueprints: GameStateBlueprints;
 }

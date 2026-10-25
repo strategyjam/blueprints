@@ -1,4 +1,5 @@
-import { getValidMoves, serializeMove } from "./rules/validator";
+import { serializeMove } from "./rules/moves";
+import { getValidMoves } from "./rules/validator";
 import type { GameState } from "./types";
 
 export function selectMove(gameState: GameState): string | null {
@@ -37,6 +38,10 @@ export function selectMove(gameState: GameState): string | null {
     for (const mismatch of mismatches) {
       console.log(mismatch);
     }
+    console.log("-----------------------");
+  } else {
+    console.log("-----------------------");
+    console.log(JSON.stringify(gameState));
     console.log("-----------------------");
   }
 
