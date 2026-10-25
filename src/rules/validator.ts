@@ -194,19 +194,25 @@ function getValidEditMoves(
           bpTo.cells.map((c) => getHexKey(c.offset)),
         );
         const candidateTargets = new Set<string>();
-        for (const c of bpTo.cells) {
-          if (bpFrom.id === bpTo.id && areCoordsEqual(c.offset, fromCoord)) {
-            continue;
-          }
-          for (const neighbor of getNeighbors(c.offset)) {
-            const nKey = getHexKey(neighbor);
-            const isFromPos =
-              bpFrom.id === bpTo.id && areCoordsEqual(neighbor, fromCoord);
-            if (!existingToOffsets.has(nKey) || isFromPos) {
-              candidateTargets.add(nKey);
+
+        if (bpTo.cells.length === 0) {
+          candidateTargets.add("0,0");
+        } else {
+          for (const c of bpTo.cells) {
+            if (bpFrom.id === bpTo.id && areCoordsEqual(c.offset, fromCoord)) {
+              continue;
+            }
+            for (const neighbor of getNeighbors(c.offset)) {
+              const nKey = getHexKey(neighbor);
+              const isFromPos =
+                bpFrom.id === bpTo.id && areCoordsEqual(neighbor, fromCoord);
+              if (!existingToOffsets.has(nKey) || isFromPos) {
+                candidateTargets.add(nKey);
+              }
             }
           }
         }
+
         for (const targetKey of candidateTargets) {
           const toCoord = parseHexKey(targetKey);
           if (bpFrom.id === bpTo.id && areCoordsEqual(toCoord, fromCoord)) {
