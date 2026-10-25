@@ -1,5 +1,5 @@
 import { BLUEPRINT_TEMPLATES } from "./templates";
-import { getHexKey, parseHexKey, getNeighbors } from "./hex";
+import { getHexKey, parseHexKey, getNeighbors, areCoordsEqual } from "./hex";
 import { countPlayerStars } from "./board";
 import type {
   GameRuleState,
@@ -155,15 +155,15 @@ function getValidPlaceMoves(
 
 function areOffsetsConnected(offsets: ReadonlyArray<HexCoord>): boolean {
   if (offsets.length <= 1) return true;
-  const set = new Set(offsets.map((o) => `${o.q},${o.r}`));
+  const set = new Set(offsets.map(getHexKey));
   const visited = new Set<string>();
   const queue: HexCoord[] = [offsets[0]!];
-  visited.add(`${offsets[0]!.q},${offsets[0]!.r}`);
+  visited.add(getHexKey(offsets[0]!));
 
   while (queue.length > 0) {
     const curr = queue.pop()!;
     for (const neighbor of getNeighbors(curr)) {
-      const key = `${neighbor.q},${neighbor.r}`;
+      const key = getHexKey(neighbor);
       if (set.has(key) && !visited.has(key)) {
         visited.add(key);
         queue.push(neighbor);
@@ -178,56 +178,40 @@ function getValidEditMoves(
 ): ReadonlyArray<MoveType> {
   const moves: MoveType[] = [];
   const seen = new Set<string>();
-
   for (const bpFrom of blueprints) {
     for (const cell of bpFrom.cells) {
       const fromCoord = cell.offset;
-
       const remainingFromCells = bpFrom.cells
-        .filter(
-          (c) => !(c.offset.q === fromCoord.q && c.offset.r === fromCoord.r),
-        )
+        .filter((c) => !areCoordsEqual(c.offset, fromCoord))
         .map((c) => c.offset);
 
-      if (!areOffsetsConnected(remainingFromCells)) continue;
-
       for (const bpTo of blueprints) {
+        if (bpFrom.id !== bpTo.id && !areOffsetsConnected(remainingFromCells)) {
+          continue;
+        }
+
         const existingToOffsets = new Set(
-          bpTo.cells.map((c) => `${c.offset.q},${c.offset.r}`),
+          bpTo.cells.map((c) => getHexKey(c.offset)),
         );
         const candidateTargets = new Set<string>();
-
         for (const c of bpTo.cells) {
-          if (
-            bpFrom.id === bpTo.id &&
-            c.offset.q === fromCoord.q &&
-            c.offset.r === fromCoord.r
-          ) {
+          if (bpFrom.id === bpTo.id && areCoordsEqual(c.offset, fromCoord)) {
             continue;
           }
           for (const neighbor of getNeighbors(c.offset)) {
-            const nKey = `${neighbor.q},${neighbor.r}`;
+            const nKey = getHexKey(neighbor);
             const isFromPos =
-              bpFrom.id === bpTo.id &&
-              neighbor.q === fromCoord.q &&
-              neighbor.r === fromCoord.r;
+              bpFrom.id === bpTo.id && areCoordsEqual(neighbor, fromCoord);
             if (!existingToOffsets.has(nKey) || isFromPos) {
               candidateTargets.add(nKey);
             }
           }
         }
-
         for (const targetKey of candidateTargets) {
           const toCoord = parseHexKey(targetKey);
-
-          if (
-            bpFrom.id === bpTo.id &&
-            toCoord.q === fromCoord.q &&
-            toCoord.r === fromCoord.r
-          ) {
+          if (bpFrom.id === bpTo.id && areCoordsEqual(toCoord, fromCoord)) {
             continue;
           }
-
           let newTargetOffsets: HexCoord[];
           if (bpFrom.id === bpTo.id) {
             newTargetOffsets = remainingFromCells.concat([toCoord]);
@@ -236,7 +220,6 @@ function getValidEditMoves(
               .map((c) => c.offset)
               .concat([toCoord]);
           }
-
           if (areOffsetsConnected(newTargetOffsets)) {
             const moveKey = `${bpFrom.id}:${fromCoord.q},${fromCoord.r}>${bpTo.id}:${toCoord.q},${toCoord.r}`;
             if (!seen.has(moveKey)) {
@@ -254,7 +237,6 @@ function getValidEditMoves(
       }
     }
   }
-
   return moves;
 }
 

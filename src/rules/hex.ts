@@ -17,7 +17,7 @@ export function parseHexKey(key: string): HexCoord {
   };
 }
 
-export const HEX_DIRECTIONS: ReadonlyArray<HexCoord> = [
+const HEX_DIRECTIONS: ReadonlyArray<HexCoord> = [
   { q: 1, r: 0 },
   { q: 1, r: -1 },
   { q: 0, r: -1 },
