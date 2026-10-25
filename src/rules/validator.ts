@@ -18,11 +18,7 @@ function convertRawBlueprints(
 ): ReadonlyArray<BlueprintTemplate> {
   return rawList.map((record, index) => {
     const cells = Object.entries(record).map(([key, type]) => {
-      const [qStr, rStr] = key.split(",");
-      const offset = {
-        q: qStr !== undefined ? parseInt(qStr, 10) : 0,
-        r: rStr !== undefined ? parseInt(rStr, 10) : 0,
-      };
+      const offset = parseHexKey(key);
       return { offset, type };
     });
     return { id: index + 1, cells };

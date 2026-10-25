@@ -6,6 +6,7 @@ export interface GameResult {
 }
 
 export type BlueprintShape = Record<string, CellType>;
+export type BoardCells = Record<string, [number, CellType]>;
 
 export type Blueprints = [
   [BlueprintShape, BlueprintShape, BlueprintShape],
@@ -14,7 +15,7 @@ export type Blueprints = [
 
 export interface InitialState {
   ply: number;
-  cells: Record<string, [number, CellType]>;
+  cells: BoardCells;
   blueprints: Blueprints;
   scores: number[];
 }
@@ -34,7 +35,7 @@ export interface GameStateView {
   turn?: number;
   ply?: number;
   left?: number;
-  cells?: Record<string, [number, CellType]>;
+  cells?: BoardCells;
   blueprints?: Blueprints;
   scores?: number[];
   stars?: number[];
