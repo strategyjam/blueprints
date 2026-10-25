@@ -22,7 +22,11 @@ export interface BlueprintTemplate {
   readonly cells: BlueprintCells;
 }
 
-export type BlueprintTemplates = ReadonlyArray<BlueprintTemplate>;
+export type BlueprintTemplates = readonly [
+  BlueprintTemplate,
+  BlueprintTemplate,
+  BlueprintTemplate,
+];
 
 export type GameStateBlueprints = readonly [
   blue: BlueprintTemplates,

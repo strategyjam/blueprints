@@ -13,20 +13,33 @@ import type {
   BoardState,
   GameStateBlueprints,
   BlueprintTemplates,
+  BlueprintTemplate,
+  BlueprintCell,
 } from "./types";
-import type { BlueprintShapes, GameStateView } from "../types";
+import type { BlueprintShape, BlueprintShapes, GameStateView } from "../types";
 import type { MoveType } from "./moves";
+
+function convertRawBlueprint(
+  shape: BlueprintShape,
+  index: number,
+): BlueprintTemplate {
+  return {
+    id: index + 1,
+    cells: Object.entries(shape).map<BlueprintCell>(([key, type]) => ({
+      offset: parseHexKey(key),
+      type,
+    })),
+  };
+}
 
 export function convertRawBlueprints(
   shapes: BlueprintShapes,
 ): BlueprintTemplates {
-  return shapes.map((record, index) => {
-    const cells = Object.entries(record).map(([key, type]) => {
-      const offset = parseHexKey(key);
-      return { offset, type };
-    });
-    return { id: index + 1, cells };
-  });
+  return [
+    convertRawBlueprint(shapes[0], 0),
+    convertRawBlueprint(shapes[1], 1),
+    convertRawBlueprint(shapes[2], 2),
+  ];
 }
 
 export type PartialGameStateView = Omit<GameStateView, "moves">;

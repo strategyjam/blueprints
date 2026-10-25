@@ -64,12 +64,12 @@ export function selectMove(gameState: GameState): string | null {
 
       if (!blueprintsMatch) {
         mismatches.push(`getStateAfterMove mismatch after "${lastMoveStr}"`);
-        console.warn("[State After Move Mismatch]");
-        console.log(
+        mismatches.push("[State After Move Mismatch]");
+        mismatches.push(
           "Expected blueprints:",
           JSON.stringify(expectedBlueprints, null, 2),
         );
-        console.log(
+        mismatches.push(
           "Actual blueprints:  ",
           JSON.stringify(actualBlueprints, null, 2),
         );
@@ -81,15 +81,15 @@ export function selectMove(gameState: GameState): string | null {
 
   if (mismatches.length > 0) {
     console.warn("[Rule / State Mismatches Detected]");
-    console.log(JSON.stringify({ gameState, serverMoves }));
+    console.log(JSON.stringify(gameState));
     for (const m of mismatches) {
       console.log(m);
     }
     console.log("-----------------------");
   } else {
-    console.log("-----------------------");
-    console.log(JSON.stringify(gameState));
-    console.log("-----------------------");
+    // console.log("-----------------------");
+    // console.log(JSON.stringify(gameState));
+    // console.log("-----------------------");
   }
 
   const randomIndex = Math.floor(Math.random() * serverMoves.length);

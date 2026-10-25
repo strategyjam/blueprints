@@ -32,6 +32,17 @@ function cloneBlueprint(bp: BlueprintTemplate): BlueprintTemplate {
   };
 }
 
+function translateCells(
+  cells: BlueprintCells,
+  dq: number,
+  dr: number,
+): BlueprintCells {
+  return cells.map((c) => ({
+    offset: { q: c.offset.q + dq, r: c.offset.r + dr },
+    type: c.type,
+  }));
+}
+
 export function getStateAfterMove(
   state: GameRuleState,
   move: MoveType,
@@ -39,7 +50,9 @@ export function getStateAfterMove(
   const playerIndex = state.currentTurn === "blue" ? 0 : 1;
 
   const nextBoard = new Map(state.board);
-  let nextPlayerBlueprints = state.blueprints[playerIndex].map(cloneBlueprint);
+  let nextPlayerBlueprints = state.blueprints[playerIndex].map(
+    cloneBlueprint,
+  ) as [BlueprintTemplate, BlueprintTemplate, BlueprintTemplate];
   const otherPlayerBlueprints = state.blueprints[1 - playerIndex]!;
 
   if (move.kind === "place") {
@@ -109,7 +122,7 @@ export function getStateAfterMove(
       areCoordsEqual(c.offset, move.to),
     );
 
-    const newToCells: BlueprintCells = alreadyExists
+    let newToCells: BlueprintCells = alreadyExists
       ? toBp.cells
       : [
           ...toBp.cells,
@@ -119,24 +132,30 @@ export function getStateAfterMove(
           },
         ];
 
-    const anchor = { q: move.to.q, r: move.to.r };
-    const recenteredToCells: BlueprintCells = newToCells.map((c) => ({
-      offset: {
-        q: c.offset.q - anchor.q,
-        r: c.offset.r - anchor.r,
-      },
-      type: c.type,
-    }));
+    if (move.blueprintIdFrom === move.blueprintIdTo) {
+      const newCells = [
+        ...newFromCells,
+        { offset: { q: move.to.q, r: move.to.r }, type: removedCell.type },
+      ];
 
-    nextPlayerBlueprints = nextPlayerBlueprints.map((bp) => {
-      if (bp.id === move.blueprintIdFrom) {
-        return { id: bp.id, cells: newFromCells };
+      nextPlayerBlueprints = nextPlayerBlueprints.map((bp) =>
+        bp.id === move.blueprintIdFrom ? { id: bp.id, cells: newCells } : bp,
+      ) as [BlueprintTemplate, BlueprintTemplate, BlueprintTemplate];
+    } else {
+      // Temporary hypothesis: recenter onto the new cell when its r === -1
+      if (move.to.r === -1) {
+        newToCells = translateCells(newToCells, -move.to.q, -move.to.r);
       }
-      if (bp.id === move.blueprintIdTo) {
-        return { id: bp.id, cells: recenteredToCells };
-      }
-      return bp;
-    });
+      nextPlayerBlueprints = nextPlayerBlueprints.map((bp) => {
+        if (bp.id === move.blueprintIdFrom) {
+          return { id: bp.id, cells: newFromCells };
+        }
+        if (bp.id === move.blueprintIdTo) {
+          return { id: bp.id, cells: newToCells };
+        }
+        return bp;
+      }) as [BlueprintTemplate, BlueprintTemplate, BlueprintTemplate];
+    }
   }
 
   const nextBlueprints: GameStateBlueprints =
