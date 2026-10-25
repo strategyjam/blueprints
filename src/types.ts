@@ -1,14 +1,21 @@
-export type CellType = "plain" | "star" | "wall";
+import type { CellType } from "./shared/types";
 
 export interface GameResult {
   winner: number;
   reason: string;
 }
 
+export type BlueprintShape = Record<string, CellType>;
+
+export type Blueprints = [
+  [BlueprintShape, BlueprintShape, BlueprintShape],
+  [BlueprintShape, BlueprintShape, BlueprintShape],
+];
+
 export interface InitialState {
   ply: number;
   cells: Record<string, [number, CellType]>;
-  blueprints: Array<Array<Record<string, CellType>>>;
+  blueprints: Blueprints;
   scores: number[];
 }
 
@@ -28,14 +35,14 @@ export interface GameStateView {
   ply?: number;
   left?: number;
   cells?: Record<string, [number, CellType]>;
-  blueprints?: Array<Array<Record<string, CellType>>>;
+  blueprints?: Blueprints;
   scores?: number[];
   stars?: number[];
 }
 
 export interface GameState {
-  type?: string;
-  game?: string;
+  type: "state";
+  game: "blueprints";
   rated?: boolean;
   ratings?: Array<{ rating: number; provisional: boolean }>;
   ratingChanges?: Record<string, unknown> | null;

@@ -1,4 +1,5 @@
 {
   "extends": "@gameroman/config/ts",
-  "compilerOptions": { "types": ["bun"], "lib": [] }
+  "compilerOptions": { "types": ["bun"], "lib": ["ESNext"] },
+  "include": ["src", "tests"]
 }

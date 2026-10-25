@@ -100,7 +100,7 @@ export async function handleMessage(ws: WebSocket, raw: string): Promise<void> {
     return;
   }
 
-  console.log(data);
+  // console.log(data);
 
   if (!isWebSocketMessage(data)) {
     return;

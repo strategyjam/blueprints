@@ -1,7 +1,8 @@
 {
   "scripts": {
     "dev": "bun src",
-    "format": "bun fmt"
+    "format": "bun fmt",
+    "test": "bun test"
   },
   "devDependencies": {
     "@gameroman/config": "0.3.0",
